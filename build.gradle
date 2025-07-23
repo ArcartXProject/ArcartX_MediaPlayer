@@ -1,0 +1,75 @@
+buildscript {
+    repositories {
+        maven { url = "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0"
+    }
+}
+
+plugins {
+    id 'java'
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'priv.seventeen.artist.arcartx'
+version = '1.0.5'
+
+repositories {
+    maven {
+        url 'https://seventeen-artist-maven.pkg.coding.net/repository/arcartx/public/'
+    }
+    mavenCentral()
+}
+base {
+    archivesName = "ArcartX_MediaPlayer"
+}
+configurations {
+    shade
+}
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+dependencies {
+    implementation 'priv.seventeen.artist.arcartx:ArcartX-Client:1.6.563'
+
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly  'org.projectlombok:lombok:1.18.24'
+
+    implementation 'org.bytedeco:javacv:1.5.7'
+    implementation "org.bytedeco:opencv:1.5.7:windows-x86_64"
+    implementation 'org.bytedeco:javacpp:1.5.7:windows-x86_64'
+    implementation 'org.bytedeco:ffmpeg:5.0-1.5.7:windows-x86_64'
+
+    implementation 'com.google.guava:guava:32.0.0-android'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'io.netty:netty-all:4.1.108.Final'
+    implementation 'com.google.code.gson:gson:2.8.9'
+
+    shade 'org.bytedeco:javacv:1.5.7'
+    shade "org.bytedeco:opencv:1.5.7:windows-x86_64"
+    shade 'org.bytedeco:javacpp:1.5.7:windows-x86_64'
+    shade 'org.bytedeco:ffmpeg:5.0-1.5.7:windows-x86_64'
+}
+
+
+shadowJar {
+    archiveClassifier.set('')
+    configurations = [project.configurations.shade]
+    exclude('org/bytedeco/javacpp/ios-arm64/**')
+    exclude('org/bytedeco/javacpp/ios-x86_64/**')
+    exclude('org/bytedeco/javacpp/linux-ppc64le/**')
+    exclude('org/bytedeco/javacpp/linux-armhf/**')
+    exclude('org/bytedeco/javacpp/linux-x86/**')
+    exclude('org/bytedeco/javacpp/linux-x86_64/**')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
