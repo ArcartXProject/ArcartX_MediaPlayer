@@ -21,6 +21,9 @@ import priv.seventeen.artist.arcartx.common.api.events.Listener;
 import priv.seventeen.artist.arcartx.common.api.events.arcartx.client.CustomPacketEvent;
 import priv.seventeen.artist.arcartx.media.player.BgmPlayerManager;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * @program: ArcartX_MediaPlayer
  * @description: 通讯
@@ -29,29 +32,33 @@ import priv.seventeen.artist.arcartx.media.player.BgmPlayerManager;
  **/
 public class NetworkListener implements Listener {
 
+    private static final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
+
     @EventHandler
     public void onCustomPack(CustomPacketEvent event){
         if(event.getId().equalsIgnoreCase("arcartx_bgm")){
-            if(event.getArgSize() == 1 && event.getArg(0).equalsIgnoreCase("stop")){
-                BgmPlayerManager.stop();
-                return;
-            }
-            if(event.getArgSize() == 2){
-                switch (event.getArg(0)){
-                    case "play" -> {
-                        String urlOrFilePath = event.getArg(1);
-                        BgmPlayerManager.play(urlOrFilePath);
-                    }
-                    case "set_loop" -> {
-                        boolean loop = Boolean.parseBoolean(event.getArg(1));
-                        BgmPlayerManager.setLoop(loop);
-                    }
-                    case "set_volume" -> {
-                        float volume = Float.parseFloat(event.getArg(1));
-                        BgmPlayerManager.setVolume(volume);
+            networkExecutor.submit(() ->{
+                if(event.getArgSize() == 1 && event.getArg(0).equalsIgnoreCase("stop")){
+                    BgmPlayerManager.stop();
+                    return;
+                }
+                if(event.getArgSize() == 2){
+                    switch (event.getArg(0)){
+                        case "play" -> {
+                            String urlOrFilePath = event.getArg(1);
+                            BgmPlayerManager.play(urlOrFilePath);
+                        }
+                        case "set_loop" -> {
+                            boolean loop = Boolean.parseBoolean(event.getArg(1));
+                            BgmPlayerManager.setLoop(loop);
+                        }
+                        case "set_volume" -> {
+                            float volume = Float.parseFloat(event.getArg(1));
+                            BgmPlayerManager.setVolume(volume);
+                        }
                     }
                 }
-            }
+            });
         }
     }
 }

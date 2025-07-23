@@ -1,7 +1,7 @@
 {
    "name": "ArcartX_MediaPlayer",
    "main": "priv.seventeen.artist.arcartx.media.MediaPlayerModule",
-   "version": "1.0.5",
+   "version": "1.0.6",
    "author": ["17Artist"],
    "description": "ArcartX 's media module, GPL-3.0 License, Source: https://github.com/ArcartXProject/ArcartX_MediaPlayer",
    "depend": [],

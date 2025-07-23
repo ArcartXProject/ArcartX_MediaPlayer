@@ -1,5 +1,5 @@
 # ArcartX_MediaPlayer🎬
-![Version](https://img.shields.io/badge/version-1.0.5-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)
 ![License](https://img.shields.io/badge/license-GPL%203.0-green.svg)
 
 ## ✨ 概述
