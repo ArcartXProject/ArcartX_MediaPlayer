@@ -25,8 +25,7 @@ import priv.seventeen.artist.arcartx.media.utils.Utils;
 
 import java.awt.image.BufferedImage;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -36,6 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @create: 2024-10-22 03:23
  **/
 public class VideoPlayer {
+
+    private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
 
     public volatile boolean pause =false;
     private volatile boolean playing = false;
@@ -165,12 +166,14 @@ public class VideoPlayer {
     public void runTick(){
         // 0.5秒检测一次进度条
         long lastCheckTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis() * 1000L;
         while (true){
             if(this.checkError || this.shutdown || this.closed){
                 shutdown();
                 break;
             }
             if(this.pause){
+                startTime = System.currentTimeMillis() * 1000L - (long) currentTime;
                 continue;
             }
             try {
@@ -179,7 +182,11 @@ public class VideoPlayer {
                     double seekTime = this.seek;
                     if(seekTime != -1){
                         currentTime = seekTime;
+                        startTime = System.currentTimeMillis() * 1000L - (long) seekTime;
                         this.seek = -1;
+                        imageQueue.forEach(imageFuture -> {
+                            imageFuture.cancel(true);
+                        });
                         imageQueue.clear();
                         this.frameGrabber.setTimestamp((long) seekTime);
                     }
@@ -191,17 +198,22 @@ public class VideoPlayer {
                     if(this.loop){
                         this.frameGrabber.setTimestamp(0);
                         this.currentTime = 0;
+                        imageQueue.forEach(imageFuture -> {
+                            imageFuture.cancel(true);
+                        });
                         imageQueue.clear();
                     }
                     continue;
                 }
 
                 if(frame.samples != null){
-                    this.audioPlayer.processAudio(frame.samples);
+                    Frame clone = frame.clone();
+                    audioExecutor.submit(() ->  this.audioPlayer.processAudio(clone.samples));
                 }
 
+
                 CompletableFuture<int[]> future = imageQueue.peek();
-                if(future != null && future.isDone()){
+                if(future != null && future.isDone() ){
                     imageQueue.poll();
                     if(future.get() != null){
                         imageUpdateCallBack(future.get());
@@ -210,6 +222,10 @@ public class VideoPlayer {
 
                 if(frame.image != null){
                     this.currentTime = frame.timestamp;
+                    long time = frame.timestamp + startTime;
+                    if(time > System.currentTimeMillis() * 1000L){
+                        Thread.sleep((time - System.currentTimeMillis() * 1000L) / 1000L);
+                    }
                     BufferedImage bufferedImage = this.converter.getBufferedImage(frame);
                     imageQueue.offer(CompletableFuture.supplyAsync(() -> Utils.convertBufferedImageToIntArray(bufferedImage)));
                 }
@@ -250,6 +266,7 @@ public class VideoPlayer {
 
     private void shutdown(){
         shutdown = true;
+        audioExecutor.shutdown();
         close();
     }
 
